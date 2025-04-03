@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ad Revenue Estimator</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body {
+      background-color: #2C2F36; /* רקע כהה */
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+    }
+    .main-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 30px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      color: #000;
+    }
+    .results-container {
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .metrics-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .metric-box {
+      background: #fff;
+      border-radius: 6px;
+      padding: 10px 15px;
+      min-width: 120px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .metric-icon {
+      width: 1.5em;
+      height: 1.5em;
+      margin-bottom: 5px;
+    }
+    .metric-title {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .metric-value {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #007bff;
+    }
+    .revenue-box {
+      margin-top: 15px;
+      background: #007bff;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.4rem;
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    /* סקשן לתוויות אמינות (Trust Badges) */
+    .trust-section {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .trust-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .trust-row {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap; /* אם תרצה למנוע שבירה שורה, אפשר flex-wrap: nowrap; */
+      gap: 10px;
+    }
+    .trust-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #ffffff;
+      border-radius: 6px;
+      padding: 10px;
+      min-width: 110px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      color: #000;
+    }
+    .trust-icon {
+      width: 2em;
+      height: 2em;
+      margin-bottom: 5px;
+    }
+    .trust-text {
+      font-size: 0.8rem;
+      text-align: center;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-card">
+    <h3 class="text-center mb-4">Ad Revenue Estimator</h3>
+    <!-- טופס ל-API או מצב ידני -->
+    <form method="post" class="mb-3">
+      <div class="mb-3">
+        <label for="domain" class="form-label">Enter Domain <span class="text-danger">*</span></label>
+        <input
+          type="text"
+          name="domain"
+          id="domain"
+          class="form-control"
+          placeholder="cnn.com"
+          required
+        />
+      </div>
+      <div class="form-check mb-3">
+        <!-- חייב להיות שם השדה 'use_api' כדי שהקוד בצד שרת יזהה שמסומן -->
+        <input class="form-check-input" type="checkbox" id="use_api" name="use_api" checked />
+        <label class="form-check-label" for="use_api">
+          Use API (if unchecked, use Manual Calculator)
+        </label>
+      </div>
+
+      <!-- כאן אפשר להוסיף גם שדות ידניים (visits, pages_per_visit וכו') אם תרצה -->
+
+      <button type="submit" class="btn btn-primary w-100">Calculate Revenue</button>
+    </form>
+
+    <!-- הצגת תוצאות (בלוק מותנה: רק אם ב-app.py שולחים result) -->
+    {% if result %}
+    <div class="results-container">
+      <h5>
+        Results ({{ result.mode }} Mode)
+        {% if result.domain != 'manual-input' %}
+          for <strong>{{ result.domain }}</strong>
+        {% endif %}
+      </h5>
+
+      {% if result.error %}
+        <p class="text-danger mt-2">Error: {{ result.error }}</p>
+      {% else %}
+        <div class="metrics-row">
+          <!-- Visits -->
+          <div class="metric-box">
+            <svg class="metric-icon" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M16 8a6 6 0 11-12 0 6 6 0 0112 0zM2 20c0-2.761 3.134-5 7-5s7 2.239 7 5"/>
+            </svg>
+            <div class="metric-title">Visits</div>
+            <div class="metric-value" id="visits">0</div>
+          </div>
+          <!-- Pages per Visit -->
+          <div class="metric-box">
+            <svg class="metric-icon" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M19 7c0-1.105-.895-2-2-2H7a2 2 0 00-2 2v10c0 1.105.895 2 2 2h10c1.105 0 2-.895 2-2V7zM8 10h8"/>
+            </svg>
+            <div class="metric-title">Pages/Visit</div>
+            <div class="metric-value" id="ppv">0</div>
+          </div>
+          <!-- Total Page Views -->
+          <div class="metric-box">
+            <svg class="metric-icon" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M1.5 12s3.637-7 10.5-7 10.5 7 10.5 7-3.637 7-10.5 7S1.5 12 1.5 12z m10.5 3a3 3 0 100-6 3 3 0 000 6z"/>
+            </svg>
+            <div class="metric-title">Page Views</div>
+            <div class="metric-value" id="pageviews">0</div>
+          </div>
+          <!-- Page RPM -->
+          <div class="metric-box">
+            <svg class="metric-icon" fill="none" stroke="currentColor" stroke-width="2"
+                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2s3 .895 3 2-1.343 2-3 2m0-8v2m0 8v2m8-2c0 3.313-3.582 6-8 6S4 19.313 4 16C4 12.687 7.582 10 12 10s8-2.687 8-6c0-3.313-3.582-6-8-6S4 0.687 4 4"/>
+            </svg>
+            <div class="metric-title">Page RPM</div>
+            <div class="metric-value" id="rpm">$0</div>
+          </div>
+        </div>
+        <!-- revenue -->
+        <div class="revenue-box" id="revenue">$0</div>
+
+        <!-- תוויות אמינות מתחת לקוביות התוצאות -->
+        <div class="trust-section">
+          <div class="trust-title">We rely on top-tier data & analytics providers:</div>
+          <div class="trust-row">
+            <!-- Badge 1: Leading Data Provider -->
+            <div class="trust-badge">
+              <!-- אייקון / לוגו (Placeholder) -->
+              <svg class="trust-icon" fill="none" stroke="currentColor" stroke-width="1.5"
+                   viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 20.25c4.97 0 9-4.03 9-9 0-4.97-4.03-9-9-9s-9 4.03-9 9c0 2.23.84 4.27 2.24 5.81M12 20.25c-.68 0-1.35-.07-2-.19m2 .19v-5.25m0 5.25c1.46 0 2.83-.35 4-.96m-6 .96c-.75-.52-1.43-1.18-2-1.94m2 1.94v-4.5m4 3.5v-3m0 0 1-2m-5 5.5v-2.5m0 0 .5-2m0 0-.5-2.5m5 2.5-2-1.5-2 1.5"/>
+              </svg>
+              <div class="trust-text">Leading Data Provider</div>
+            </div>
+            <!-- Badge 2: Advanced Analytics -->
+            <div class="trust-badge">
+              <svg class="trust-icon" fill="none" stroke="currentColor" stroke-width="1.5"
+                   viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5m-13.5-10.5v10.5m6-10.5v10.5"/>
+              </svg>
+              <div class="trust-text">Advanced Analytics</div>
+            </div>
+            <!-- Badge 3: Secure & Encrypted -->
+            <div class="trust-badge">
+              <svg class="trust-icon" fill="none" stroke="currentColor" stroke-width="1.5"
+                   viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M16.5 10.5V6a4.5 4.5 0 00-9 0v4.5m-3 0A1.5 1.5 0 004.5 12v7.5a1.5 1.5 0 001.5 1.5h12a1.5 1.5 0 001.5-1.5V12a1.5 1.5 0 00-1.5-1.5h-12z"/>
+              </svg>
+              <div class="trust-text">Secure & Encrypted</div>
+            </div>
+          </div>
+        </div>
+        <!-- סוף תוויות אמינות -->
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Bootstrap JS (לא חובה) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- אנימציית ריצה (פשוטה) -->
+  <script>
+    function animateValue(id, start, end, duration, prefix = '', suffix = '') {
+      const obj = document.getElementById(id);
+      if (!obj) return;
+
+      let startTime = null;
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        // עיגול למטה
+        const val = Math.floor(progress * (end - start) + start).toLocaleString('en-US');
+        obj.textContent = prefix + val + suffix;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      }
+      window.requestAnimationFrame(step);
+    }
+
+    // רק אם יש result וללא error (תבנית Jinja)
+    {% if result and not result.error %}
+      const visitsVal = {{ result.visits or 0 }};
+      const ppvVal = {{ result.pages_per_visit or 1.5 }};
+      const pageViewsVal = {{ result.page_views or 0 }};
+      const rpmVal = {{ result.rpm or 0 }};
+      const revenueVal = {{ result.revenue or 0 }};
+
+      animateValue('visits', 0, visitsVal, 1200);
+      animateValue('ppv', 0, ppvVal, 1200);
+      animateValue('pageviews', 0, pageViewsVal, 1200);
+      animateValue('rpm', 0, rpmVal, 1200, '$');
+      animateValue('revenue', 0, revenueVal, 1500, '$');
+    {% endif %}
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
